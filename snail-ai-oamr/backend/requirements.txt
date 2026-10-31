@@ -1,0 +1,37 @@
+# requirements.txt
+# 注意：三个子项目共用仓库根目录的同一个 .venv，依赖版本必须与
+# python_study/fastapi/requirements.txt、python_study/rag/requirements.txt 保持一致
+# （本文件已于 2026-10-23 在 Python 3.14 上对齐验证）
+# ==========================================
+# Web 框架
+# ==========================================
+fastapi==0.150.0
+uvicorn==0.54.0
+# SSE - Server-Sent Events 流式响应支持
+sse-starlette==2.2.1
+# YAML 配置解析（config/*.yml）
+pyyaml==6.0.3
+# 环境变量加载
+python-dotenv==1.2.4
+# ==========================================
+# LangChain / LangGraph 生态
+# ==========================================
+langchain==1.4.6
+langchain-core==1.6.12
+langchain-openai==1.7.2
+# 必须锁 0.4.1：0.4.2 起移除了 langchain_community.vectorstores.Milvus（rag/hybrid_retriever.py 在用），
+# 官方要求迁移到独立的 langchain-milvus 包，但该包依赖 faiss-cpu，
+# 在 macOS Intel + Python 3.14 下无法安装，故锁定 0.4.1
+langchain-community==0.4.1
+# LangGraph - 工作流编排（graph/workflow.py 直接 import，必须显式声明）
+langgraph==1.2.16
+# DashScope SDK（通义千问）
+dashscope==1.27.8
+# ==========================================
+# 向量数据库 / 混合检索
+# ==========================================
+pymilvus==3.0.0
+# 中文分词（BM25 检索使用，rag/hybrid_retriever.py）
+jieba==0.42.1
+# BM25 关键词检索算法（rag/hybrid_retriever.py）
+rank-bm25==0.2.2

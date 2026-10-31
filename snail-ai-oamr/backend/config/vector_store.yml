@@ -1,0 +1,21 @@
+# 向量存储的表名
+collection_name: knowledge_vector_store
+# 向量库地址和端口
+host: 127.0.0.1
+port: 19530
+# 向量检索匹配几个
+k: 5
+# 只返回相似度 > 0.5 的结果
+score_threshold: 0.5
+# 记录那些文件被处理过的文件
+md5_hex_store: md5.text
+# 允许那些后缀名可以加载到向量库
+allow_knowledge_file_type: ["txt","pdf"]
+# 文本分片的大小
+chunk_size: 200
+# 两个连续分片之间允许的重叠的字符数据
+chunk_overlap: 20
+# 自然分段的分割符
+separators: ["\n\n","\n","。",".","?","？","!","","  "]
+# 知识库文档路径
+rag_data_path: docs

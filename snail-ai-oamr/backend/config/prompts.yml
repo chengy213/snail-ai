@@ -1,0 +1,12 @@
+# 闲聊提示词
+chit_chat_prompt_path: prompts/chit_chat_prompt.txt
+# 业务问题提示词
+business_qa_prompt_path: prompts/business_qa_prompt.txt
+# 系统问题提示词
+system_issue_prompt_path: prompts/system_issue_prompt.txt
+# 数据统计提示词
+data_statistics_prompt_path: prompts/data_statistics_prompt.txt
+# 业务操作提示词
+business_operation_prompt_path: prompts/business_operation_prompt.txt
+# 问题分类提示词
+question_classification_prompt_path: prompts/question_classification_prompt.txt

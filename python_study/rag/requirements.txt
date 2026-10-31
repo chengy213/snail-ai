@@ -1,0 +1,53 @@
+# requirements.txt
+# ==========================================
+# Web 框架
+# ==========================================
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+python-multipart>=0.0.18
+pydantic-settings>=2.7.0
+
+# ==========================================
+# 大模型调用（千问 DashScope 兼容 OpenAI 接口）
+# ==========================================
+openai>=1.58.0
+
+# ==========================================
+# 向量数据库
+# ==========================================
+pymilvus>=2.5.0
+
+# ==========================================
+# 文档解析
+# ==========================================
+# 本项目实际使用 langchain-community 的 PyPDFLoader / TextLoader / Docx2txtLoader
+# （见 app/services/document_service.py），故显式声明这两个 loader 的底层依赖：
+pypdf>=5.0.0
+docx2txt>=0.8
+# unstructured>=0.12.0  # 未使用（仅在 document_service.py 注释中提及），且其依赖链
+#                       # （numba→llvmlite、pypdfium2）在 macOS Intel + Python 3.14 下无法安装，
+#                       # 如需启用 UnstructuredLoader，请在 Apple Silicon / Linux 环境安装
+markdown>=3.5.0
+
+# ==========================================
+# 环境变量加载
+# ==========================================
+python-dotenv>=1.0.0
+
+# ==========================================
+# LangChain 生态
+# ==========================================
+langchain>=0.3.0
+langchain-openai>=0.2.0
+# 与 snail-ai-oamr/backend 保持一致（三个子项目共用同一 venv，避免互相覆盖降级）
+langchain-community==0.4.1
+# DashScope SDK - embedding_service.py 中 DashScopeEmbeddings 的底层依赖
+# （langchain-community 不会自动带入，需显式声明）
+dashscope>=1.20.0
+# langchain-milvus>=0.1.0  # 未使用：vector_store.py 直接用 pymilvus 的 MilvusClient 连接 Milvus 服务。
+#                          # 其依赖 milvus-lite → faiss-cpu 在 macOS Intel + Python 3.14 下无预编译 wheel，
+#                          # 源码构建又需要 SWIG/C++ 工具链，故禁用；如需使用请换 Apple Silicon / Linux 环境
+# sentence-transformers>=4.0.0  # 本地嵌入模型（BGE/M3E）可选依赖，当前代码未启用（embedding_service.py 中已注释）
+# 注意：torch 已停止发布 macOS x86_64（Intel）版本，且 torch<=2.8 无 Python 3.14 wheel，
+# Intel Mac + Python 3.14 环境无法安装 torch，故禁用本依赖；如需启用本地模型，
+# 请在 Apple Silicon / Linux 机器，或 Python<=3.11 的 Intel Mac 环境安装。

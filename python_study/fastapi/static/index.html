@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户管理系统</title>
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --success: #16a34a;
+    --warning: #f59e0b;
+    --bg: #f1f5f9;
+    --card: #fff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #fff; padding: 24px 32px; border-radius: var(--radius); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 1.5rem; font-weight: 600; }
+  .header .sys-info { font-size: .85rem; opacity: .85; }
+  .header .health { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.15); padding: 8px 16px; border-radius: 20px; font-size: .85rem; }
+  .health-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; }
+  .health-dot.error { background: #ef4444; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); }
+  .stat-card .label { font-size: .85rem; color: var(--text-secondary); }
+  .stat-card .value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+
+  /* Toolbar */
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .toolbar-left { display: flex; gap: 8px; align-items: center; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: none; border-radius: var(--radius); cursor: pointer; font-size: .875rem; font-weight: 500; transition: all .15s; white-space: nowrap; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover:not(:disabled) { background: var(--danger-hover); }
+  .btn-outline { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn-outline:hover:not(:disabled) { background: #f8fafc; }
+  .btn-sm { padding: 4px 10px; font-size: .8rem; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover:not(:disabled) { background: #15803d; }
+  .btn-warning { background: var(--warning); color: #fff; }
+  .btn-warning:hover:not(:disabled) { background: #d97706; }
+
+  /* Search */
+  .search-box { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .search-box input, .search-box select { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: .875rem; outline: none; }
+  .search-box input:focus, .search-box select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+  .search-box input { width: 160px; }
+  .search-box select { width: 100px; }
+
+  /* Table */
+  .table-wrapper { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: #f8fafc; }
+  th { padding: 12px 16px; text-align: left; font-weight: 600; font-size: .8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: .875rem; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover { background: #f8fafc; }
+  .actions { display: flex; gap: 4px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: .75rem; font-weight: 500; }
+  .badge-active { background: #dcfce7; color: #16a34a; }
+  .badge-inactive { background: #fee2e2; color: #dc2626; }
+  .badge-male { background: #dbeafe; color: #2563eb; }
+  .badge-female { background: #fce7f3; color: #db2777; }
+  .badge-unknown { background: #f1f5f9; color: #64748b; }
+  .text-muted { color: var(--text-secondary); font-size: .8rem; }
+  .no-data { text-align: center; padding: 48px; color: var(--text-secondary); }
+
+  /* Pagination */
+  .pagination { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
+  .pagination .info { font-size: .85rem; color: var(--text-secondary); }
+  .pagination .pages { display: flex; gap: 4px; }
+  .pagination .pages button { width: 36px; height: 36px; border: 1px solid var(--border); background: #fff; border-radius: 6px; cursor: pointer; font-size: .85rem; }
+  .pagination .pages button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .pagination .pages button:hover:not(.active):not(:disabled) { background: #f1f5f9; }
+  .pagination .pages button:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.5); z-index: 1000; justify-content: center; align-items: flex-start; padding-top: 60px; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #fff; border-radius: 12px; width: 520px; max-width: 95vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h3 { font-size: 1.1rem; }
+  .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); line-height: 1; }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* Form */
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; margin-bottom: 4px; font-size: .85rem; font-weight: 500; }
+  .form-group label .req { color: var(--danger); }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: .875rem; outline: none; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-hint { font-size: .75rem; color: var(--text-secondary); margin-top: 2px; }
+  .form-error { font-size: .75rem; color: var(--danger); margin-top: 2px; }
+
+  /* Toast */
+  .toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+  .toast { padding: 12px 20px; border-radius: var(--radius); color: #fff; font-size: .875rem; box-shadow: 0 4px 12px rgba(0,0,0,.2); animation: slideIn .3s ease; max-width: 380px; }
+  .toast.success { background: #16a34a; }
+  .toast.error { background: #dc2626; }
+  .toast.warning { background: #f59e0b; color: #1e293b; }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* Loading */
+  .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin .6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 768px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .form-row { grid-template-columns: 1fr; }
+    .search-box { flex-direction: column; }
+    .search-box input, .search-box select { width: 100%; }
+    .toolbar { flex-direction: column; align-items: stretch; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- 系统信息头部 -->
+  <div class="header">
+    <div>
+      <h1 id="appTitle">用户管理系统</h1>
+      <div class="sys-info" id="sysInfo">正在加载...</div>
+    </div>
+    <div class="health" id="healthBadge">
+      <span class="health-dot"></span>
+      <span>健康检查中...</span>
+    </div>
+  </div>
+
+  <!-- 统计卡片 -->
+  <div class="stats">
+    <div class="stat-card"><div class="label">用户总数</div><div class="value" id="statTotal">-</div></div>
+    <div class="stat-card"><div class="label">活跃用户</div><div class="value" id="statActive">-</div></div>
+    <div class="stat-card"><div class="label">停用用户</div><div class="value" id="statInactive">-</div></div>
+    <div class="stat-card"><div class="label">男 / 女 / 未知</div><div class="value" id="statGender">-</div></div>
+  </div>
+
+  <!-- 工具栏 -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="btn btn-primary" onclick="openCreateModal()">+ 新建用户</button>
+      <button class="btn btn-outline" onclick="refreshList()">刷新</button>
+    </div>
+    <div class="search-box">
+      <input type="text" id="filterUsername" placeholder="用户名" onkeydown="if(event.key==='Enter')searchUsers()">
+      <input type="text" id="filterRealName" placeholder="真实姓名" onkeydown="if(event.key==='Enter')searchUsers()">
+      <input type="text" id="filterEmail" placeholder="邮箱" onkeydown="if(event.key==='Enter')searchUsers()">
+      <input type="text" id="filterPhone" placeholder="手机号" onkeydown="if(event.key==='Enter')searchUsers()">
+      <select id="filterGender">
+        <option value="">性别</option>
+        <option value="男">男</option>
+        <option value="女">女</option>
+        <option value="未知">未知</option>
+      </select>
+      <select id="filterActive">
+        <option value="">状态</option>
+        <option value="true">启用</option>
+        <option value="false">停用</option>
+      </select>
+      <button class="btn btn-primary" onclick="searchUsers()">搜索</button>
+      <button class="btn btn-outline" onclick="resetFilters()">重置</button>
+    </div>
+  </div>
+
+  <!-- 用户表格 -->
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>用户名</th>
+          <th>真实姓名</th>
+          <th>性别</th>
+          <th>邮箱</th>
+          <th>手机号</th>
+          <th>状态</th>
+          <th>创建时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody">
+        <tr><td colspan="9" class="no-data">加载中...</td></tr>
+      </tbody>
+    </table>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- 新建/编辑用户弹窗 -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">新建用户</h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editUserId">
+      <div class="form-row">
+        <div class="form-group">
+          <label><span class="req">*</span> 用户名</label>
+          <input type="text" id="formUsername" placeholder="字母、数字、下划线">
+          <div class="form-hint">3-50位字母、数字、下划线</div>
+        </div>
+        <div class="form-group">
+          <label><span class="req">*</span> 真实姓名</label>
+          <input type="text" id="formRealName" placeholder="请输入真实姓名">
+        </div>
+      </div>
+      <div class="form-group" id="passwordGroup">
+        <label><span class="req">*</span> 密码</label>
+        <input type="password" id="formPassword" placeholder="请输入密码">
+        <div class="form-hint">至少6位字符</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>性别</label>
+          <select id="formGender">
+            <option value="未知">未知</option>
+            <option value="男">男</option>
+            <option value="女">女</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>状态</label>
+          <select id="formActive">
+            <option value="true">启用</option>
+            <option value="false">停用</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" id="formEmail" placeholder="请输入邮箱">
+        </div>
+        <div class="form-group">
+          <label>手机号</label>
+          <input type="text" id="formPhone" placeholder="11位手机号">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>备注</label>
+        <textarea id="formRemark" placeholder="请输入备注信息（可选）"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" id="btnSubmit" onclick="submitForm()">确认创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="width:400px;">
+    <div class="modal-header">
+      <h3>确认删除</h3>
+      <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>确定要删除用户 <strong id="deleteUserName"></strong> 吗？此操作不可撤销。</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeDeleteModal()">取消</button>
+      <button class="btn btn-danger" id="btnDelete" onclick="confirmDelete()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 消息提示容器 -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ==================== 配置 ====================
+// 自动检测: 通过FastAPI静态文件服务访问时使用相对路径, 直接打开文件时使用localhost
+const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+  ? window.location.origin
+  : 'http://localhost:8000';
+
+// ==================== 状态 ====================
+let currentPage = 1;
+let currentPageSize = 10;
+let deleteUserId = null;
+let totalUsers = 0;
+
+// ==================== 工具函数 ====================
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => { toast.remove(); }, 3000);
+}
+
+async function apiRequest(url, options = {}) {
+  try {
+    const response = await fetch(`${API_BASE}${url}`, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const msg = data.detail || data.message || `请求失败 (${response.status})`;
+      throw new Error(msg);
+    }
+    return data;
+  } catch (err) {
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      throw new Error('无法连接到后端服务，请确认服务已启动');
+    }
+    throw err;
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  // Handle timezone offset for display
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function getGenderBadge(gender) {
+  const map = { '男': 'badge-male', '女': 'badge-female', '未知': 'badge-unknown' };
+  return `<span class="badge ${map[gender] || 'badge-unknown'}">${gender || '未知'}</span>`;
+}
+
+function getActiveBadge(isActive) {
+  return isActive
+    ? '<span class="badge badge-active">启用</span>'
+    : '<span class="badge badge-inactive">停用</span>';
+}
+
+// ==================== 系统信息 & 健康检查 ====================
+async function loadSystemInfo() {
+  try {
+    const data = await apiRequest('/');
+    document.getElementById('appTitle').textContent = data.data?.name || data.name || '用户管理系统';
+    const version = data.data?.version || data.version || '';
+    const status = data.data?.status || data.status || '';
+    document.getElementById('sysInfo').textContent = `v${version} · ${status}`;
+  } catch (err) {
+    document.getElementById('sysInfo').textContent = '系统信息获取失败';
+  }
+}
+
+async function checkHealth() {
+  const badge = document.getElementById('healthBadge');
+  const dot = badge.querySelector('.health-dot');
+  const text = badge.querySelectorAll('span')[1];
+  try {
+    const data = await apiRequest('/health');
+    if (data.status === 'healthy' || data.data?.status === 'healthy') {
+      dot.className = 'health-dot';
+      text.textContent = '服务正常';
+    } else {
+      dot.className = 'health-dot error';
+      text.textContent = '服务异常';
+    }
+  } catch {
+    dot.className = 'health-dot error';
+    text.textContent = '连接失败';
+  }
+}
+
+// ==================== 用户列表 ====================
+async function loadUserList(page = currentPage) {
+  currentPage = page;
+  const params = new URLSearchParams();
+  params.set('page', page);
+  params.set('page_size', currentPageSize);
+
+  const filters = {
+    username: document.getElementById('filterUsername').value.trim(),
+    real_name: document.getElementById('filterRealName').value.trim(),
+    email: document.getElementById('filterEmail').value.trim(),
+    phone: document.getElementById('filterPhone').value.trim(),
+    gender: document.getElementById('filterGender').value,
+    is_active: document.getElementById('filterActive').value,
+  };
+  Object.entries(filters).forEach(([k, v]) => { if (v) params.set(k, v); });
+
+  try {
+    const data = await apiRequest(`/api/v1/users/?${params.toString()}`);
+    const list = data.data || data;
+    const items = list.items || [];
+    totalUsers = list.total || 0;
+
+    renderTable(items);
+    renderPagination(list.total, list.page, list.page_size);
+    updateStats(items, list.total);
+  } catch (err) {
+    document.getElementById('userTableBody').innerHTML =
+      `<tr><td colspan="9" class="no-data" style="color:#dc2626;">加载失败: ${err.message}</td></tr>`;
+    document.getElementById('pagination').innerHTML = '';
+  }
+}
+
+function renderTable(users) {
+  const tbody = document.getElementById('userTableBody');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="no-data">暂无数据</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>${u.id}</td>
+      <td><strong>${escapeHtml(u.username)}</strong></td>
+      <td>${escapeHtml(u.real_name)}</td>
+      <td>${getGenderBadge(u.gender)}</td>
+      <td>${u.email || '<span class="text-muted">-</span>'}</td>
+      <td>${u.phone || '<span class="text-muted">-</span>'}</td>
+      <td>${getActiveBadge(u.is_active)}</td>
+      <td class="text-muted">${formatDate(u.created_at)}</td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-outline btn-sm" onclick="openEditModal(${u.id})" title="编辑">编辑</button>
+          <button class="btn ${u.is_active ? 'btn-warning' : 'btn-success'} btn-sm" onclick="toggleActive(${u.id}, ${!u.is_active})" title="${u.is_active ? '停用' : '启用'}">${u.is_active ? '停用' : '启用'}</button>
+          <button class="btn btn-danger btn-sm" onclick="openDeleteModal(${u.id}, '${escapeHtml(u.username)}')" title="删除">删除</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderPagination(total, page, pageSize) {
+  const container = document.getElementById('pagination');
+  const totalPages = Math.ceil(total / pageSize) || 1;
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+
+  let pagesHtml = '';
+  // Previous
+  pagesHtml += `<button ${page <= 1 ? 'disabled' : ''} onclick="loadUserList(${page - 1})">‹</button>`;
+
+  // Page numbers
+  const maxVisible = 5;
+  let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+  startPage = Math.max(1, endPage - maxVisible + 1);
+
+  if (startPage > 1) {
+    pagesHtml += `<button onclick="loadUserList(1)">1</button>`;
+    if (startPage > 2) pagesHtml += `<button disabled>...</button>`;
+  }
+  for (let i = startPage; i <= endPage; i++) {
+    pagesHtml += `<button class="${i === page ? 'active' : ''}" onclick="loadUserList(${i})">${i}</button>`;
+  }
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) pagesHtml += `<button disabled>...</button>`;
+    pagesHtml += `<button onclick="loadUserList(${totalPages})">${totalPages}</button>`;
+  }
+
+  // Next
+  pagesHtml += `<button ${page >= totalPages ? 'disabled' : ''} onclick="loadUserList(${page + 1})">›</button>`;
+
+  container.innerHTML = `
+    <div class="info">共 ${total} 条记录，显示第 ${total > 0 ? start : 0}-${end} 条</div>
+    <div class="pages">${pagesHtml}</div>
+  `;
+}
+
+async function updateStats(items, total) {
+  document.getElementById('statTotal').textContent = total;
+  // For accurate stats, fetch all active/inactive counts via API (no filter)
+  // Use a lightweight approach: if the current page shows partial data, that's fine as a quick view
+  // Fetch full stats without pagination
+  try {
+    const [activeData, inactiveData] = await Promise.all([
+      apiRequest('/api/v1/users/?page=1&page_size=1&is_active=true'),
+      apiRequest('/api/v1/users/?page=1&page_size=1&is_active=false'),
+    ]);
+    const activeTotal = (activeData.data || activeData).total || 0;
+    const inactiveTotal = (inactiveData.data || inactiveData).total || 0;
+    document.getElementById('statActive').textContent = activeTotal;
+    document.getElementById('statInactive').textContent = inactiveTotal;
+  } catch {
+    document.getElementById('statActive').textContent = '-';
+    document.getElementById('statInactive').textContent = '-';
+  }
+
+  // Gender stats
+  try {
+    let maleCnt = 0, femaleCnt = 0, unknownCnt = 0;
+    // 空表时不必请求（total=0 会导致 page_size=0 触发 422 校验错误）
+    if (total > 0) {
+      const allData = await apiRequest(`/api/v1/users/?page=1&page_size=${Math.min(total, 100)}`);
+      const allItems = ((allData.data || allData).items || []);
+      allItems.forEach(u => {
+        if (u.gender === '男') maleCnt++;
+        else if (u.gender === '女') femaleCnt++;
+        else unknownCnt++;
+      });
+    }
+    document.getElementById('statGender').textContent = `${maleCnt} / ${femaleCnt} / ${unknownCnt}`;
+  } catch {
+    document.getElementById('statGender').textContent = '-';
+  }
+}
+
+function searchUsers() {
+  loadUserList(1);
+}
+
+function resetFilters() {
+  document.getElementById('filterUsername').value = '';
+  document.getElementById('filterRealName').value = '';
+  document.getElementById('filterEmail').value = '';
+  document.getElementById('filterPhone').value = '';
+  document.getElementById('filterGender').value = '';
+  document.getElementById('filterActive').value = '';
+  loadUserList(1);
+}
+
+function refreshList() {
+  loadUserList(currentPage);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ==================== 创建用户 ====================
+function openCreateModal() {
+  document.getElementById('modalTitle').textContent = '新建用户';
+  document.getElementById('btnSubmit').textContent = '确认创建';
+  document.getElementById('editUserId').value = '';
+  document.getElementById('passwordGroup').style.display = 'block';
+  // Reset form
+  document.getElementById('formUsername').value = '';
+  document.getElementById('formRealName').value = '';
+  document.getElementById('formPassword').value = '';
+  document.getElementById('formGender').value = '未知';
+  document.getElementById('formActive').value = 'true';
+  document.getElementById('formEmail').value = '';
+  document.getElementById('formPhone').value = '';
+  document.getElementById('formRemark').value = '';
+  document.getElementById('formUsername').disabled = false;
+  document.getElementById('userModal').classList.add('active');
+}
+
+// ==================== 编辑用户 ====================
+async function openEditModal(userId) {
+  try {
+    const data = await apiRequest(`/api/v1/users/${userId}`);
+    const user = data.data || data;
+
+    document.getElementById('modalTitle').textContent = '编辑用户';
+    document.getElementById('btnSubmit').textContent = '确认更新';
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('passwordGroup').style.display = 'none';
+    document.getElementById('formUsername').value = user.username;
+    document.getElementById('formUsername').disabled = true;
+    document.getElementById('formRealName').value = user.real_name || '';
+    document.getElementById('formPassword').value = '';
+    document.getElementById('formGender').value = user.gender || '未知';
+    document.getElementById('formActive').value = user.is_active ? 'true' : 'false';
+    document.getElementById('formEmail').value = user.email || '';
+    document.getElementById('formPhone').value = user.phone || '';
+    document.getElementById('formRemark').value = user.remark || '';
+    document.getElementById('userModal').classList.add('active');
+  } catch (err) {
+    showToast(`获取用户信息失败: ${err.message}`, 'error');
+  }
+}
+
+function closeModal() {
+  document.getElementById('userModal').classList.remove('active');
+}
+
+// ==================== 提交表单 ====================
+async function submitForm() {
+  const userId = document.getElementById('editUserId').value;
+  const isEdit = !!userId;
+
+  const body = {
+    real_name: document.getElementById('formRealName').value.trim(),
+    gender: document.getElementById('formGender').value,
+    email: document.getElementById('formEmail').value.trim() || null,
+    phone: document.getElementById('formPhone').value.trim() || null,
+    is_active: document.getElementById('formActive').value === 'true',
+    remark: document.getElementById('formRemark').value.trim() || null,
+  };
+
+  // Basic validation
+  if (!isEdit) {
+    body.username = document.getElementById('formUsername').value.trim();
+    body.password = document.getElementById('formPassword').value;
+    if (!body.username) { showToast('请输入用户名', 'warning'); return; }
+    if (!body.password || body.password.length < 6) { showToast('密码至少6位字符', 'warning'); return; }
+  }
+  if (!body.real_name) { showToast('请输入真实姓名', 'warning'); return; }
+
+  // Phone validation
+  if (body.phone && !/^1[3-9]\d{9}$/.test(body.phone)) {
+    showToast('请输入正确的11位手机号', 'warning'); return;
+  }
+
+  // Email validation
+  if (body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
+    showToast('请输入正确的邮箱格式', 'warning'); return;
+  }
+
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span> 提交中...';
+
+  try {
+    if (isEdit) {
+      // Remove null values for partial update
+      Object.keys(body).forEach(k => { if (body[k] === null) delete body[k]; });
+      await apiRequest(`/api/v1/users/${userId}`, { method: 'PUT', body: JSON.stringify(body) });
+      showToast('用户更新成功');
+    } else {
+      await apiRequest('/api/v1/users/', { method: 'POST', body: JSON.stringify(body) });
+      showToast('用户创建成功');
+    }
+    closeModal();
+    loadUserList();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = isEdit ? '确认更新' : '确认创建';
+  }
+}
+
+// ==================== 删除用户 ====================
+function openDeleteModal(userId, username) {
+  deleteUserId = userId;
+  document.getElementById('deleteUserName').textContent = username;
+  document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('active');
+}
+
+async function confirmDelete() {
+  const btn = document.getElementById('btnDelete');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span> 删除中...';
+  try {
+    await apiRequest(`/api/v1/users/${deleteUserId}`, { method: 'DELETE' });
+    showToast('用户删除成功');
+    closeDeleteModal();
+    // If current page is now empty, go to previous page
+    if (document.querySelectorAll('#userTableBody tr').length <= 1 && currentPage > 1) {
+      currentPage--;
+    }
+    loadUserList();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '确认删除';
+  }
+}
+
+// ==================== 切换激活状态 ====================
+async function toggleActive(userId, newState) {
+  try {
+    await apiRequest(`/api/v1/users/${userId}/activate`, { method: 'PUT' });
+    showToast(`用户已${newState ? '启用' : '停用'}`);
+    loadUserList();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// ==================== 弹窗关闭（点击遮罩） ====================
+document.getElementById('userModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteModal();
+});
+
+// ==================== 键盘快捷键 ====================
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeModal();
+    closeDeleteModal();
+  }
+});
+
+// ==================== 初始化 ====================
+async function init() {
+  await Promise.all([loadSystemInfo(), checkHealth()]);
+  await loadUserList(1);
+  // Periodic health check
+  setInterval(checkHealth, 30000);
+}
+
+init();
+</script>
+</body>
+</html>
